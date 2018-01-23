@@ -50,3 +50,45 @@ g = function(x, z = x+y)
 g(1)
 g(5)
 
+
+# Exercise 2
+
+primes = c(2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 
+           43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97)
+
+xs = c(3, 4, 12, 19, 23, 48, 50, 61, 63, 78)
+
+# Wrong code - print if x is in p
+
+for(x in xs) {
+  for(p in primes) {
+    if (x==p) {
+      print(x)
+      break
+    } 
+  }
+}
+
+# Correct code
+
+res = c()
+
+for(x in xs) {
+  flag = FALSE
+  
+  for(p in primes) {
+    if (x==p) {
+      flag = TRUE
+      break
+    } 
+  }
+  
+  if (flag == FALSE)
+    res = c(res, x)
+}
+
+# Better code
+
+xs[!(xs %in% primes)]
+
+
