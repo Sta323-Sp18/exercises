@@ -1,0 +1,35 @@
+---
+title: "ggplot2 exercises"
+output: html_document
+---
+
+## Setup
+
+```{r message=TRUE}
+library(ggplot2)
+
+movies = readr::read_csv("http://www2.stat.duke.edu/~cr173/Sta323_Sp18/slides/data/movies/movies.csv")
+```
+
+## Exercise 1
+
+```{r fig.width=6, fig.height=4}
+ggplot(movies, aes(x=imdb_num_votes/1000, y=imdb_rating, color=audience_rating)) +
+  geom_point() +
+  facet_wrap(~mpaa_rating) +
+  theme_bw() +
+  labs(x="IMDB number of votes (1000s)", y="IMDB rating", color="Audience rating", title="IMDB and RT scores, by MPAA rating")
+```
+
+
+## Exercise 2
+
+```{r}
+ggplot(movies, aes(x=audience_score, y=critics_score, color=best_pic_nom)) +
+  geom_point() +
+  facet_wrap(~mpaa_rating) +
+  theme_bw() +
+  geom_smooth(method="lm", color="black", se = FALSE, fullrange=TRUE, size=0.25) +
+  geom_abline(intercept=0, slope=1, color="grey", size=0.25) +
+  xlim(0,100)
+```
