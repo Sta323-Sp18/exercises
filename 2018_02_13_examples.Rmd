@@ -1,0 +1,14 @@
+---
+title: "ggplot2 exercises"
+output: html_document
+---
+
+## Setup
+
+```{r}
+library(ggplot2)
+
+movies = readr::read_csv("http://www2.stat.duke.edu/~cr173/Sta323_Sp18/slides/data/movies/movies.csv")
+```
+
+## Exercise 1
