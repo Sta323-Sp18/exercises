@@ -1,8 +1,4 @@
-all: paper.html paper.pdf
-
-paper.pdf: paper.Rmd Fig1/fig.png Fig2/fig.png
-	Rscript -e "library(rmarkdown);render('paper.Rmd')"
-
+all: paper.html
 
 paper.html: paper.Rmd Fig1/fig.png Fig2/fig.png
 	Rscript -e "library(rmarkdown);render('paper.Rmd')"

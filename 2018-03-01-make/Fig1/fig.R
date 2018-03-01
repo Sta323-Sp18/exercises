@@ -1,3 +1,3 @@
-png("fig.png", width=200, height=200)
+png("fig.png", width=600, height=600)
 plot(pressure, type='b')
 dev.off()
