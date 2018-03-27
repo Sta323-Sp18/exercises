@@ -11,6 +11,8 @@ shinyApp(
     titlePanel("Shiny Example - Beta-Binomial"),
     sidebarLayout(
       sidebarPanel(
+        numericInput("sims", "Number of simulations:", value=1e6),
+        actionButton("do_abc", "Run ABC simulation"),
         h4("Data:"),
         sliderInput("x", "Number of heads:", min=0, max=10, value=8),
         sliderInput("n", "Number of flips:", min=0, max=50, value=10),
@@ -18,18 +20,11 @@ shinyApp(
         numericInput("a", "Prior number of successes:", min=0, value=1),
         numericInput("b", "Prior number of failures:",  min=0, value=1),
         h4("Options:"),
-        checkboxInput("facet", label = "Facet distributions", value = TRUE),
-        checkboxInput("plot_colors", label = "Customize plot colors", value = FALSE),
-        conditionalPanel(
-          "input.plot_colors == true",
-          selectInput("prior", "Prior color", choices = colors, selected = colors[1]),
-          selectInput("likelihood", "Likelihood color", choices = colors, selected = colors[2]),
-          selectInput("posterior", "Posterior color", choices = colors, selected = colors[3])  
-        )
-        
+        checkboxInput("facet", label = "Facet distributions", value = TRUE)
       ),
       mainPanel(
-        plotOutput("dist")
+        plotOutput("dist"),
+        plotOutput("abc")
       )
     )
   ),
@@ -59,27 +54,6 @@ shinyApp(
       }
     )
     
-    observeEvent(input$prior, {
-      if (input$prior == input$likelihood)
-        updateSelectInput(session, "likelihood", selected = setdiff(colors, c(input$prior, input$posterior)))
-      if (input$prior == input$posterior)
-        updateSelectInput(session, "posterior", selected = setdiff(colors, c(input$prior, input$likelihood)))
-    })
-    
-    observeEvent(input$likelihood, {
-      if (input$likelihood == input$prior)
-        updateSelectInput(session, "prior", selected = setdiff(colors, c(input$prior, input$posterior)))
-      if (input$likelihood == input$posterior)
-        updateSelectInput(session, "posterior", selected = setdiff(colors, c(input$prior, input$likelihood)))
-    })
-    
-    observeEvent(input$posterior, {
-      if (input$posterior == input$likelihood)
-        updateSelectInput(session, "likelihood", selected = setdiff(colors, c(input$prior, input$posterior)))
-      if (input$posterior == input$prior)
-        updateSelectInput(session, "prior", selected = setdiff(colors, c(input$prior, input$likelihood)))
-    })
-    
     observeEvent(
       input$n,
       updateSliderInput(session, "x", max = input$n)
@@ -96,18 +70,60 @@ shinyApp(
         tidyr::gather(distribution, density, -p) %>%
         mutate(distribution = forcats::as_factor(distribution))
       
-      selected_colors = c(input$prior, input$likelihood, input$posterior)
-      
-      g = ggplot(d, aes(x=p, y=density, color=distribution, fill=distribution)) +
+      g = ggplot(d, aes(x=p, y=density, color=distribution)) +
         geom_line() +
-        geom_area(aes(ymax = density), alpha=0.5) +
-        scale_color_manual(values = selected_colors) +
-        scale_fill_manual(values = selected_colors)
+        geom_area(aes(ymax = density, fill=distribution), alpha=0.2) +
+        scale_color_manual(values = colors) +
+        scale_fill_manual(values = colors)
+
       
       if (input$facet)
         g = g + facet_wrap(~distribution)
 
       g  
     })
+
+    ## Step 1 - Sample prior
+    p = eventReactive(
+      input$do_abc,
+      {
+        cat("Sims:",input$sims,"\n")
+        req(input$sims)
+        validate(
+          need(input$sims > 10000, "Number of simulations is too small, sims should be greater than 10,000"),
+          need(input$sims <= 5e7, "Number of simulations is too large, sims should be less than 50,000,000")
+        )
+        
+        rbeta(input$sims, input$a, input$b)
+      }
+    )
+    
+    ## Step 2 - Simulate data
+    x_sim = eventReactive(
+      p(),
+      {
+        rbinom(length(p()), size = input$n, prob = p())
+      }
+    )
+    
+    ## Step 3 - subset p
+    post = eventReactive(
+      x_sim(),
+      {
+        p()[input$x == x_sim()]
+      }
+    )
+    
+    
+    output$abc = renderPlot({
+      
+      d = data_frame(post = post())
+      
+      print(length(post))
+      
+      ggplot(d, aes(x=post)) + 
+        geom_density(fill="blue", alpha=0.2) + 
+        xlim(0,1)
+    }) 
   }
 )
